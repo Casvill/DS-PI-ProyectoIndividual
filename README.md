@@ -55,4 +55,3 @@
     Se recomienda no modificar nada más aparte de lo especificado arriba para evitar errores inesperados.
 
 ---
----

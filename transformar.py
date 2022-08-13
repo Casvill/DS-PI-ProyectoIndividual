@@ -1,5 +1,7 @@
 import pandas as pd
 import os
+import warnings
+warnings.filterwarnings('ignore')
 
 def transformar_clientes(path:str,sep:str,encoding:str) -> pd.DataFrame:
 
@@ -46,11 +48,6 @@ def transformar_compra(path:str,sep:str,encoding:str) -> pd.DataFrame:
 
     df['Fecha'] = pd.to_datetime(df['Fecha'])
 
-    #Añado una columna que identificará los registros que son outliers
-    #1 = No es outlier
-    #0 = Es outlier
-    df['Outlier'] = 1
-
     df= detectar_outliers(df,'Precio')
     df =detectar_outliers(df,'Cantidad')
 
@@ -62,10 +59,6 @@ def transformar_gasto(path:str,sep:str,encoding:str) -> pd.DataFrame:
 
     df['Fecha'] = pd.to_datetime(df['Fecha'])
 
-    #Añado una columna que identificará los registros que son outliers
-    #1 = No es outlier
-    #0 = Es outlier
-    df['Outlier'] = 1
 
     df= detectar_outliers(df,'Monto')
 
@@ -76,7 +69,9 @@ def transformar_localidades(path:str,sep:str,encoding:str) -> pd.DataFrame:
 
     df = pd.read_csv(f'Datasets/{path}',sep=sep,encoding=encoding)
 
-    df.rename(columns={'centroide_lon':'Longitud','centroide_lat':'Latitud'},inplace=True)
+    df.rename(columns={'centroide_lon':'longitud',
+                       'centroide_lat':'latitud'},
+                       inplace=True)
 
     return df
 
@@ -85,12 +80,17 @@ def transformar_proveedores(path:str,sep:str,encoding:str) -> pd.DataFrame:
 
     df = pd.read_csv(f'Datasets/{path}',sep=sep,encoding=encoding)
 
-    df.rename(columns={'Address':'Domicilio','City':'Ciudad','State':'Provincia','Country':'Pais','departamen':'Localidad'},inplace=True)
+    df.rename(columns={'Address':'domicilio',
+                        'City':'ciudad',
+                        'State':'provincia',
+                        'Country':'pais',
+                        'departamen':'localidad'},
+                        inplace=True)
 
-    df.Ciudad = df['Ciudad'].str.capitalize()
-    df.Provincia = df['Provincia'].str.capitalize()
-    df.Pais = df['Pais'].str.capitalize()
-    df.Localidad = df['Localidad'].str.capitalize()
+    df.Ciudad = df['ciudad'].str.capitalize()
+    df.Provincia = df['provincia'].str.capitalize()
+    df.Pais = df['pais'].str.capitalize()
+    df.Localidad = df['localidad'].str.capitalize()
 
     return df
 
@@ -111,18 +111,40 @@ def transformar_venta(path:str,sep:str,encoding:str) -> pd.DataFrame:
 
     df = pd.read_csv(f'Datasets/{path}',sep=sep,encoding=encoding)
 
-    #Añado una columna que identificará los registros que son outliers
-    #1 = No es outlier
-    #0 = Es outlier
-    df['Outlier'] = 1
-
     df= detectar_outliers(df,'Precio')
     df =detectar_outliers(df,'Cantidad')
     
+    new_names = {'IdVenta':'id_venta',
+                'Fecha':'fecha',
+                'Fecha_Entrega':'fecha_entrega',
+                'IdCanal':'id_canal',
+                'IdCliente':'id_cliente',
+                'IdSucursal':'id_sucursal',
+                'IdEmpleado':'id_empleado',
+                'IdProducto':'id_producto',
+                'Cantidad':'cantidad',
+                'Precio':'precio'}
+
+    df.rename(columns=new_names,inplace=True)
     
     return df
 
 def detectar_outliers(df:pd.DataFrame,columna:str,tecnica='cajas') -> pd.DataFrame:
+
+    """
+    Función que detecta outliers en un dataframe usando una tecnica determinada.
+    Parámetros:
+        df: DataFrame sobre el que se realizará la detección de outliers.
+        columna: columna sobre la que se realizará la detección de outliers.
+        tecnica: tecnica de detección de outliers ('cajas' o 'sigmas').
+    Retorna:
+        DataFrame: DataFrame con los outliers detectados en una nueva columna llamada 'outlier'.
+        
+        (0 = outlier, 1 = no outlier)
+    """
+
+    if not 'outlier' in df.columns:
+        df['outlier'] = 1
 
     #Detección por medio de Diagrama de Cajas:
     if tecnica == 'cajas':
@@ -141,7 +163,7 @@ def detectar_outliers(df:pd.DataFrame,columna:str,tecnica='cajas') -> pd.DataFra
         minimo = promedio - (3 * stddev)
 
 
-    df['Outlier'][(df[columna] > maximo) | (df[columna] < minimo)] = 0
+    df['outlier'][(df[columna] > maximo) | (df[columna] < minimo)] = 0
     
     return df
 
